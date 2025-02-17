@@ -10,10 +10,15 @@ If you want to self-host the bot, follow the instructions below.
 
 ## Usage
 Use `?help` to get a list of commands.
+
 To get started with Racacoonie, use `?account` to create an account.
+
 From there, you can use `?add` to add items and `?remove` to remove items from your account.
+
 These items are used when you `?scrounge` for a meal.
+
 `?scrounge` will look through the dining hall menus for today and tell you which dining halls have items you like.
+
 You can use `?menu <dining hall> <date>` to see the menu for a specific dining hall on a specific date. If no date is provided, it will default to today. If no dining hall is provided, it will default to the dining hall you have set in your account.
 
 ## Self-hosting
