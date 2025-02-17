@@ -29,5 +29,6 @@ You can use `?menu <dining hall> <date>` to see the menu for a specific dining h
 DISCORD_TOKEN=<your bot token>
 ```
 To get a bot token, go to the Discord Developer Portal and create a new application. Then, create a bot and copy the token.
+
 4. Set up the SQLite database with `python setup.py`.
 5. Run the bot with `python bot.py`.
