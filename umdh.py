@@ -147,11 +147,12 @@ def check_for_items_cached(user_id):
                         if items.lower() in item.lower():
                             if hall not in hall_items:
                                 hall_items[hall] = []
-                            hall_items[hall].append({
-                                'item': item,
-                                'meal': meal,
-                                'station': station
-                            })
+                            if item not in [i['item'] for i in hall_items[hall]]:
+                                hall_items[hall].append({
+                                    'item': item,
+                                    'meal': meal,
+                                    'station': station
+                                })
     
     conn.close()
 

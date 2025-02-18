@@ -21,6 +21,10 @@ These items are used when you `?scrounge` for a meal.
 
 You can use `?menu <dining hall> <date>` to see the menu for a specific dining hall on a specific date. If no date is provided, it will default to today. If no dining hall is provided, it will default to the dining hall you have set in your account.
 
+## Roadmap
+- [ ] Adding optional daily messages when cache is updated.
+- [ ] Fixing permissions.
+
 ## Self-hosting
 1. Clone the repository.
 2. Install the required packages with `pip install -r requirements.txt`.
