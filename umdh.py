@@ -1,9 +1,11 @@
 import bs4
 import requests
-import json
 import sqlite3
+from datetime import datetime, timezone
 
 url = 'https://dining.umich.edu/menus-locations/dining-halls/'
+
+# region Hall functions
 halls = [
     'bursley',
     'east-quad',
@@ -31,6 +33,25 @@ def get_hall(hall):
     if hall.lower() in halls:
         return hall
     return None
+# endregion
+
+def get_user_food(user_id):
+    '''
+    returns a list of the user's food items
+    '''
+    conn = sqlite3.connect('umdh.db')
+    c = conn.cursor()
+
+    c.execute('SELECT food_id FROM users_food WHERE user_id = ?', (user_id,))
+    result = c.fetchall()
+    user_list = []
+    for item in result:
+        c.execute('SELECT name FROM food WHERE food_id = ?', (item[0],))
+        user_list.append(c.fetchone()[0])
+
+    conn.close()
+
+    return user_list
 
 def get_menu(hall, menu_date=None):
     '''
@@ -77,37 +98,48 @@ def get_menu(hall, menu_date=None):
 
     return menu
 
-def check_for_items(user_id):
+def get_cached_menu(hall):
     '''
-    input is list of items 
-    [
-        'hamburger',
-        'pizza'
-    ]
-    returns a dictionary of halls and which items they have
-    {
-        'hall': {
-            'item': 'item',
-            'meal': 'meal',
-            'station': 'station'
-        }
-    }
+    returns the menu for the given dining hall from the cache
     '''
-    # get user list
     conn = sqlite3.connect('umdh.db')
     c = conn.cursor()
 
-    c.execute('SELECT food_id FROM users_food WHERE user_id = ?', (user_id,))
+    c.execute('SELECT * FROM menu WHERE hall = ?', (hall,))
     result = c.fetchall()
-    user_list = []
+
+    menu = {}
+
     for item in result:
-        c.execute('SELECT name FROM food WHERE food_id = ?', (item[0],))
-        user_list.append(c.fetchone()[0])
-    
+        hall = item[0]
+        meal = item[1]
+        station = item[2]
+        item = item[3]
+
+        if meal not in menu:
+            menu[meal] = {}
+        if station not in menu[meal]:
+            menu[meal][station] = []
+        
+        menu[meal][station].append(item)
+
+    conn.close()
+
+    return menu
+
+def check_for_items_cached(user_id):
+    '''
+    checks for items in the user's list using the cached menu
+    '''
+    conn = sqlite3.connect('umdh.db')
+    c = conn.cursor()
+
+    user_list = get_user_food(user_id)
+
     hall_items = {}
 
     for hall in halls:
-        menu = get_menu(hall)
+        menu = get_cached_menu(hall)
         for meal in menu:
             for station in menu[meal]:
                 for item in menu[meal][station]:
@@ -120,10 +152,106 @@ def check_for_items(user_id):
                                 'meal': meal,
                                 'station': station
                             })
-
+    
+    conn.close()
 
     return hall_items
 
+def update_cache():
+    '''
+    updates the menu cache
+    '''
+    conn = sqlite3.connect('umdh.db')
+    c = conn.cursor()
 
-if __name__ == '__main__':
-    print(json.dumps(check_for_items(365169403316142090), indent=4))
+    # clear the table
+    c.execute('DELETE FROM menu')
+
+    for hall in halls:
+        menu = get_menu(hall)
+        for meal in menu:
+            for station in menu[meal]:
+                for item in menu[meal][station]:
+                    c.execute('INSERT INTO menu VALUES (?, ?, ?, ?)', (hall, meal, station, item))
+
+    conn.commit()
+    conn.close()
+
+    with open("last_scrape.txt", "w") as f:
+        f.write(datetime.now(timezone.utc).isoformat())
+
+def cache_check():
+    '''
+    Checks if the cache needs to be updated and updates it if necessary
+    '''
+    with open("last_scrape.txt", "r") as f:
+        last_scrape = f.read()
+    last_scrape = datetime.fromisoformat(last_scrape)
+    if datetime.now(timezone.utc).date() > last_scrape.date() and datetime.now(timezone.utc).hour >= 2:
+        update_cache()
+        with open("last_scrape.txt", "w") as f:
+            f.write(datetime.now(timezone.utc).isoformat())
+
+def add_food(user_id, food):
+    '''
+    Adds a food item to the user's list
+    '''
+    conn = sqlite3.connect('umdh.db')
+    c = conn.cursor()
+
+    c.execute('SELECT food_id FROM food WHERE name = ?', (food,))
+    result = c.fetchone()
+
+    if not result:
+        c.execute('INSERT INTO food (name) VALUES (?)', (food,))
+        food_id = c.lastrowid
+    else:
+        food_id = result[0]
+    
+    c.execute('INSERT OR IGNORE INTO users_food VALUES (?, ?)', (food_id, user_id))
+    conn.commit()
+    conn.close()
+
+def remove_food(user_id, food):
+    '''
+    Removes a food item from the user's list
+    '''
+    conn = sqlite3.connect('umdh.db')
+    c = conn.cursor()
+
+    c.execute('SELECT food_id FROM food WHERE name = ?', (food,))
+    result = c.fetchone()
+
+    if not result:
+        return
+    
+    food_id = result[0]
+    c.execute('DELETE FROM users_food WHERE user_id = ? AND food_id = ?', (user_id, food_id))
+    conn.commit()
+    conn.close()
+
+def format_hall_items(hall_items):
+    '''
+    Formats the hall items into a string
+    '''
+    formatted = ''
+    for hall in hall_items:
+        formatted += f'**{hall}**\n'
+        for item in hall_items[hall]:
+            formatted += f'**{item["meal"]}** at **{item["station"]}**\n'
+            formatted += item["item"] + '\n'
+        formatted += '\n'
+    return formatted
+
+def format_menu(menu):
+    '''
+    Formats the menu into a string
+    '''
+    formatted_menu = ''
+    for meal, stations in menu.items():
+        formatted_menu += f'**{meal.capitalize()}**\n'
+        for station, items in stations.items():
+            formatted_menu += f'**{station}**\n'
+            formatted_menu += ', '.join(items) + '\n'
+        formatted_menu += '\n'
+    return formatted_menu

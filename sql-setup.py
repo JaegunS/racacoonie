@@ -7,6 +7,21 @@ db = 'umdh.db'
 conn = sqlite3.connect(db)
 cursor = conn.cursor()
 
+# check if the table exists
+if cursor.execute('SELECT name FROM sqlite_master WHERE type="table" AND name="users"').fetchone():
+    conn.close()
+    print('Database already set up.')
+    exit()
+
+cursor.execute('''
+CREATE TABLE menu (
+    hall TEXT,
+    meal TEXT,
+    station TEXT,
+    item TEXT
+)
+''')
+
 cursor.execute('''
 CREATE TABLE users (
     user_id INTEGER PRIMARY KEY,

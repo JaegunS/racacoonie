@@ -32,3 +32,6 @@ To get a bot token, go to the Discord Developer Portal and create a new applicat
 
 4. Set up the SQLite database with `python setup.py`.
 5. Run the bot with `python bot.py`.
+
+## Development
+If you want to contribute to the project, feel free to fork the repository and submit a pull request. I'm open to any suggestions or improvements.
