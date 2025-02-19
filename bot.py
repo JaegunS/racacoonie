@@ -4,7 +4,7 @@ import os
 import asyncio
 import sqlite3
 from dotenv import load_dotenv
-from umdh import get_menu, get_cached_menu, check_for_items_cached, get_menu, get_hall, cache_check, add_food, remove_food, get_user_food, format_hall_items, format_menu
+from umdh import get_menu, get_cached_menu, check_for_items_cached, get_menu, get_hall, cache_check, add_food, remove_food, get_user_food, format_hall_items, format_menu, update_cache
 from datetime import datetime, timezone, timedelta
 
 # Load environment variables
@@ -135,6 +135,14 @@ async def scrounge(ctx):
             await ctx.send(part)
     else:
         await ctx.send(formatted_items)
+
+@bot.command()
+async def update(ctx):
+    '''
+    Updates the cache
+    '''
+    update_cache()
+    await ctx.send('Cache updated!')
 
 
 # region Bot events

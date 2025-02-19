@@ -24,6 +24,8 @@ You can use `?menu <dining hall> <date>` to see the menu for a specific dining h
 ## Roadmap
 - [ ] Adding optional daily messages when cache is updated.
 - [ ] Fixing permissions.
+- [x] Regex support.
+- [ ] Adding hours.
 
 ## Self-hosting
 1. Clone the repository.

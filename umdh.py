@@ -2,6 +2,7 @@ import bs4
 import requests
 import sqlite3
 from datetime import datetime, timezone
+import re
 
 url = 'https://dining.umich.edu/menus-locations/dining-halls/'
 
@@ -102,6 +103,8 @@ def get_cached_menu(hall):
     '''
     returns the menu for the given dining hall from the cache
     '''
+    hall = get_hall(hall)
+
     conn = sqlite3.connect('umdh.db')
     c = conn.cursor()
 
@@ -144,7 +147,7 @@ def check_for_items_cached(user_id):
             for station in menu[meal]:
                 for item in menu[meal][station]:
                     for items in user_list:
-                        if items.lower() in item.lower():
+                        if re.search(items, item, re.IGNORECASE):
                             if hall not in hall_items:
                                 hall_items[hall] = []
                             if item not in [i['item'] for i in hall_items[hall]]:
@@ -190,8 +193,6 @@ def cache_check():
     last_scrape = datetime.fromisoformat(last_scrape)
     if datetime.now(timezone.utc).date() > last_scrape.date() and datetime.now(timezone.utc).hour >= 2:
         update_cache()
-        with open("last_scrape.txt", "w") as f:
-            f.write(datetime.now(timezone.utc).isoformat())
 
 def add_food(user_id, food):
     '''
